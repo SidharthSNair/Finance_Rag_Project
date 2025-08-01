@@ -1,0 +1,17 @@
+finance-rag-project/
+│
+├── backend/               → Right-click project > New > Directory
+│   ├── chains/            → Inside backend, create "chains"
+│   ├── agents/
+│   ├── tools/
+│   ├── utils/
+│   ├── vectorstore/
+│   └── main.py            → Right-click backend > New > Python File
+│
+├── frontend/              → Create “frontend”
+│   └── index.html         → New > HTML File
+│
+├── data/                  → Where PDFs and finance files go
+├── .env                   → Right-click project > New > File
+├── requirements.txt       → New > File
+└── README.md              → New > File
