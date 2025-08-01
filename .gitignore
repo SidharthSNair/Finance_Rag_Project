@@ -1,0 +1,5 @@
+# Ignore env and PyCharm junk
+.env
+*.pyc
+__pycache__/
+.idea/
