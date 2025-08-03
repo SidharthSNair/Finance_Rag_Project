@@ -3,3 +3,9 @@
 *.pyc
 __pycache__/
 .idea/
+unclean_data/
+data/Finance_data.csv
+data/.keep
+vectorstore/*
+!vectorstore/.gitkeep
+

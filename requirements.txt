@@ -8,3 +8,5 @@ unstructured
 pypdf
 tiktoken
 sentence-transformers
+jinja2
+python-multipart
