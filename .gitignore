@@ -4,7 +4,7 @@
 __pycache__/
 .idea/
 unclean_data/
-data/Finance_data.csv
+data/Rundeck.pdf
 data/.keep
 vectorstore/*
 !vectorstore/.gitkeep
