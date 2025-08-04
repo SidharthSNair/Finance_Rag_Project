@@ -1,19 +1,17 @@
+import os
+
+
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.llms import Ollama
-from langchain.chains import RetrievalQA
-import os
+
+
+from chains.qa_chain import get_qa_chain
 
 app = FastAPI()
-templates = Jinja2Templates(directory="../frontend")
+templates = Jinja2Templates(directory="frontend/templates")
 
-embedding = OllamaEmbeddings(model="nomic-embed-text")
-vector_db = Chroma(persist_directory="../vectorstore", embedding_function=embedding)
-retriever = vector_db.as_retriever()
-qa_chain = RetrievalQA.from_chain_type(llm=Ollama(model="gemma:2b"), retriever=retriever)
+qa_chain = get_qa_chain()
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
