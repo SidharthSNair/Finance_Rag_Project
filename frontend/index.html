@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Finance RAG QA</title>
+</head>
+<body>
+    <h1>Ask a Question 📚</h1>
+    <form method="post" action="/ask">
+        <input type="text" name="question" placeholder="Type your question here..." required>
+        <button type="submit">Ask</button>
+    </form>
+    {% if answer %}
+        <h2>Question:</h2>
+        <p>{{ question }}</p>
+        <h2>Answer:</h2>
+        <p>{{ answer }}</p>
+    {% endif %}
+</body>
+</html>

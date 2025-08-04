@@ -4,8 +4,6 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import OllamaEmbeddings
 import os
 
-from sympy.physics.units import vacuum_impedance
-from tqdm import tqdm
 
 # 1. Load documents
 def load_documents(folder_path):
