@@ -2,16 +2,42 @@
 <html>
 <head>
     <title>Finance RAG QA</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1, h2 { color: #333; }
+        form { margin-bottom: 20px; }
+        input[type="text"] {
+            width: 60%;
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 12px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
     <h1>Ask a Question 📚</h1>
+
+    <!-- Question Form -->
     <form method="post" action="/ask">
         <input type="text" name="question" placeholder="Type your question here..." required>
         <button type="submit">Ask</button>
     </form>
-    {% if answer %}
+
+    <!-- Upload Files -->
+    <form method="post" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="files" multiple required>
+        <button type="submit">Upload Files</button>
+    </form>
+
+    {% if question %}
         <h2>Question:</h2>
         <p>{{ question }}</p>
+    {% endif %}
+
+    {% if answer %}
         <h2>Answer:</h2>
         <p>{{ answer }}</p>
     {% endif %}

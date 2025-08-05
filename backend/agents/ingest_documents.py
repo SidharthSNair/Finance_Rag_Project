@@ -45,11 +45,7 @@ def create_vector_store(chunks, persist_dir="vectorstore"):
 
     print(f"Vector store created at: {persist_dir}")
 
-# 4. main
-if __name__ == "__main__":
-    print("🔹 Loading documents...")
-
-    # Get the absolute path to the 'data' folder
+def ingest_present_docs():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.abspath(os.path.join(script_dir, "..", "..", "data"))
     vector_path = os.path.abspath(os.path.join(script_dir, "..", "..", "vectorstore"))
@@ -66,3 +62,31 @@ if __name__ == "__main__":
     print("🔹 Creating vector store...")
     create_vector_store(chunks, persist_dir=vector_path)
     print("🎉 Done!")
+
+# 🔹 Main function for uploaded files (not default data/)
+def ingest_uploaded_documents():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    upload_dir = os.path.abspath(os.path.join(script_dir, "..", "..", "uploaded_docs"))
+    vector_path = os.path.abspath(os.path.join(script_dir, "..", "..", "vectorstore"))
+
+    print("📄 Ingesting uploaded documents...")
+    docs = load_documents(upload_dir)
+    print(f"✅ Loaded {len(docs)} doc(s)")
+
+    chunks = split_documents(docs)
+    print(f"🧩 Split into {len(chunks)} chunks")
+
+    create_vector_store(chunks, persist_dir=vector_path)
+    print("🎉 Ingestion complete!")
+
+
+# Run manually only if needed
+if __name__ == "__main__":
+    ingest_uploaded_documents()
+
+# 4. main
+if __name__ == "__main__":
+    # print("🔹 Loading documents...")
+    ingest_uploaded_documents()
+
+
