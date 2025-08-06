@@ -26,20 +26,55 @@
         <button type="submit">Ask</button>
     </form>
 
+
+
     <!-- Upload Files -->
     <form method="post" action="/upload" enctype="multipart/form-data">
         <input type="file" name="files" multiple required>
         <button type="submit">Upload Files</button>
     </form>
 
-    {% if question %}
-        <h2>Question:</h2>
-        <p>{{ question }}</p>
-    {% endif %}
+{% if answer %}
+    <h2>Answer:</h2>
+    <p>{{ answer }}</p>
+{% endif %}
 
-    {% if answer %}
-        <h2>Answer:</h2>
-        <p>{{ answer }}</p>
-    {% endif %}
+{% if sources %}
+    <h3>Sources:</h3>
+    <ul>
+        {% for src in sources %}
+            <li>{{ src }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+    <h1>Ask a Question 📚 (Streaming)</h1>
+    <input type="text" id="question" placeholder="Type your question here..." />
+    <button onclick="sendQuestion()">Ask</button>
+
+    <h2>Answer:</h2>
+    <div id="answer" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 10px;"></div>
+
+
 </body>
+<script>
+function sendQuestion() {
+    const ws = new WebSocket("ws://localhost:8000/ws/ask");
+    const question = document.getElementById("question").value;
+    const answerDiv = document.getElementById("answer");
+    answerDiv.innerText = "";
+
+    ws.onopen = () => {
+        ws.send(question);
+    };
+
+    ws.onmessage = (event) => {
+        answerDiv.innerText += event.data;
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket closed");
+    };
+}
+</script>
 </html>

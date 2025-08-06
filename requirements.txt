@@ -1,5 +1,7 @@
 langchain
-langchain-community
+langchain_community
+langchain_ollama
+langchain_chroma
 chromadb
 fastapi
 uvicorn
