@@ -29,10 +29,13 @@
 
 
     <!-- Upload Files -->
-    <form method="post" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="files" multiple required>
-        <button type="submit">Upload Files</button>
-    </form>
+<h2>Upload Files</h2>
+<input type="file" id="fileInput" multiple />
+<button onclick="uploadFiles()">Upload Files</button>
+
+
+
+
 
 {% if answer %}
     <h2>Answer:</h2>
@@ -55,6 +58,8 @@
     <h2>Answer:</h2>
     <div id="answer" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 10px;"></div>
 
+<div id="sources"></div>
+
 
 </body>
 <script>
@@ -62,19 +67,66 @@ function sendQuestion() {
     const ws = new WebSocket("ws://localhost:8000/ws/ask");
     const question = document.getElementById("question").value;
     const answerDiv = document.getElementById("answer");
-    answerDiv.innerText = "";
+    const sourcesDiv = document.getElementById("sources");
+
+    answerDiv.textContent = "";
+    sourcesDiv.innerHTML = "";
 
     ws.onopen = () => {
         ws.send(question);
     };
 
     ws.onmessage = (event) => {
-        answerDiv.innerText += event.data;
+        try {
+            // Try parsing as JSON to see if it's the final sources
+            const json = JSON.parse(event.data);
+            if (json.sources) {
+                sourcesDiv.innerHTML = "<h3>Sources:</h3><ul>" +
+                    json.sources.map(src => `<li>${src}</li>`).join('') +
+                    "</ul>";
+            }
+        } catch {
+            // If not JSON, treat as streamed token
+            answerDiv.textContent += event.data;
+        }
     };
 
     ws.onclose = () => {
         console.log("WebSocket closed");
     };
 }
+function uploadFiles() {
+    const input = document.getElementById("fileInput");
+    const files = input.files;
+    const formData = new FormData();
+
+    for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    fetch("http://localhost:8000/upload", {
+        method: "POST",
+        headers: {
+                    "Accept": "application/json"
+                  },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Upload failed");
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert("Files uploaded successfully!");
+        console.log("Server response:", data);
+    })
+    .catch(error => {
+        alert("Upload failed: " + error.message);
+        console.error(error);
+    });
+}
+
+
 </script>
 </html>

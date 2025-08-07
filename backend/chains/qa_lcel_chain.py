@@ -5,6 +5,10 @@ from langchain_community.vectorstores import Chroma
 #from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
+from langchain_community.chat_models import ChatOllama
+
+
+
 
 import os
 
@@ -93,7 +97,7 @@ def get_lcel_qa_chain_with_sources():
     prompt = ChatPromptTemplate.from_template(template)
 
     # Chain Steps
-    llm = Ollama(model="gemma:2b")
+    llm = ChatOllama(model="gemma:2b", streaming=True)
 
     rag_chain = (
             {"context": retriever, "question": lambda x: x}
