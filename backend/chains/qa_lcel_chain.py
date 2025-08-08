@@ -1,4 +1,4 @@
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import Chroma
@@ -7,8 +7,7 @@ from langchain_community.llms import Ollama
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
 from langchain_community.chat_models import ChatOllama
 
-
-
+from backend.memory_store import get_chat_history
 
 import os
 
@@ -100,10 +99,17 @@ def get_lcel_qa_chain_with_sources():
     llm = ChatOllama(model="gemma:2b", streaming=True)
 
     rag_chain = (
-            {"context": retriever, "question": lambda x: x}
+            {"context": (lambda x: x["question"]) | retriever, "question": lambda x: x["question"]}
             | prompt
             | llm
             | StrOutputParser()
     )
+    # Add memory wrapper
+    chat_with_memory = RunnableWithMessageHistory(
+        rag_chain,
+        get_chat_history,  # Memory store function (by session_id)
+        input_messages_key="question",  # Which input to track in memory
+        history_messages_key="history"  # how to pass memory to chain
+    )
 
-    return retriever, rag_chain
+    return retriever, chat_with_memory

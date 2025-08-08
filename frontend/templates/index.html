@@ -64,7 +64,9 @@
 </body>
 <script>
 function sendQuestion() {
-    const ws = new WebSocket("ws://localhost:8000/ws/ask");
+    const sessionId = crypto.randomUUID();  // or hardcode a string
+    const ws = new WebSocket("ws://localhost:8000/ws/ask?session_id=" + sessionId);
+
     const question = document.getElementById("question").value;
     const answerDiv = document.getElementById("answer");
     const sourcesDiv = document.getElementById("sources");
@@ -126,6 +128,9 @@ function uploadFiles() {
         console.error(error);
     });
 }
+
+if (json.final_answer) {
+    console.log("Final Answer:", json.final_answer); 
 
 
 </script>

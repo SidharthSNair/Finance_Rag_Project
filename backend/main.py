@@ -1,7 +1,6 @@
 import os
 import shutil
 
-
 from fastapi import FastAPI, Request, Form, UploadFile, File, WebSocket
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -16,7 +15,6 @@ from backend.chains.qa_lcel_chain import (
     get_lcel_qa_chain_with_sources
 )
 from backend.agents.ingest_documents import ingest_uploaded_documents
-
 
 app = FastAPI()
 templates = Jinja2Templates(directory="frontend/templates")
@@ -34,11 +32,14 @@ qa_chain = get_lcel_qa_chain()
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploaded_docs"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+
 class WebSocketCallbackHandler(AsyncCallbackHandler):
     def __init__(self, websocket: WebSocket):
         self.websocket = websocket
+        self.full_answer = ""  # to store the complete answer
 
     async def on_llm_new_token(self, token: str, **kwargs):
+        self.full_answer += token
         await self.websocket.send_text(token)
 
 
@@ -67,27 +68,42 @@ def ask_question(request: Request, question: str = Form(...)):
         }
     )
 
+
 @app.websocket("/ws/ask")
 async def websocket_ask(websocket: WebSocket):
     await websocket.accept()
     question = await websocket.receive_text()
 
+    # 1) Pull per-session id from the WS URL, e.g. ws://.../ws/ask?session_id=abc
+    session_id = websocket.query_params.get("session_id", "default")
+
+    # 2) Build retriever + memory-wrapped chain
     retriever, qa_chain = get_lcel_qa_chain_with_sources()
-    docs = retriever.get_relevant_documents(question)
+
+    # 3) Get sources (use invoke to avoid the deprecation warning)
+    docs = retriever.invoke(question)
     sources = [doc.page_content for doc in docs]
 
+    # 4) Stream tokens to the browser via callback
     callback_handler = WebSocketCallbackHandler(websocket)
-
-    # 4. Run the LCEL chain with streaming + callback
-    async for chunk in qa_chain.astream(
-            question,
-        config={"callbacks": [callback_handler]}
+    async for _ in qa_chain.astream(
+        {"question": question},  # <-- pass a dict if your chain expects {question,...}
+        config={
+            "callbacks": [callback_handler],
+            "configurable": {"session_id": session_id},  # <-- IMPORTANT for memory
+        },
     ):
-        pass  # chunks are handled by the callback handler in real time
-    # 5. After streaming tokens, send the sources
-    await websocket.send_json({"sources": sources})
+        pass  # tokens are sent from on_llm_new_token
+
+    # 5) After streaming, send sources and (optionally) the full answer
+    await websocket.send_json({
+        "sources": sources,
+        "final_answer": getattr(callback_handler, "full_answer", None)
+    })
 
     await websocket.close()
+
+
 
 @app.post("/upload")
 async def upload_files(request: Request, files: list[UploadFile] = File(...)):

@@ -81,8 +81,7 @@ def ingest_uploaded_documents():
 
 
 # Run manually only if needed
-# if __name__ == "__main__":
-#     ingest_uploaded_documents()
+# 
 
 # 4. main
 if __name__ == "__main__":
