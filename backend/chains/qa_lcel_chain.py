@@ -1,6 +1,8 @@
+from operator import itemgetter
+
 from langchain_core.runnables import Runnable, RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.vectorstores import Chroma
 #from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
@@ -85,25 +87,48 @@ def get_lcel_qa_chain_with_sources():
     retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
 
     # Prompt
-    template = """
-    Answer the question based on the context:
-    <context>
-    {context}
-    </context>
-
-    Question: {question}
-    """
-    prompt = ChatPromptTemplate.from_template(template)
+    # template = """
+    # You are a helpful assistant. Use chat history when relevant.
+    #
+    # Chat so far:
+    # {history}
+    # Answer the question based on the context:
+    # <context>
+    # {context}
+    # </context>
+    #
+    # Question: {question}
+    # """
+    prompt = ChatPromptTemplate.from_messages([
+        MessagesPlaceholder(variable_name="history"),
+        ("system", "You are a helpful assistant. Use the context to answer accurately."),
+        ("human",
+         "Context:\n<context>\n{context}\n</context>\n\n"
+         "Question: {question}")
+    ])
 
     # Chain Steps
     llm = ChatOllama(model="gemma:2b", streaming=True)
 
+    # rag_chain = (
+    #         {"context": (lambda x: x["question"]) | retriever, "question": lambda x: x["question"]}
+    #         | prompt
+    #         | llm
+    #         | StrOutputParser()
+    # )
+
+    # LCEL mapping — pass question, history, and ensure retriever gets a string
     rag_chain = (
-            {"context": (lambda x: x["question"]) | retriever, "question": lambda x: x["question"]}
-            | prompt
-            | llm
-            | StrOutputParser()
+        {
+            "question": itemgetter("question"),
+            "history": itemgetter("history"),
+            "context": itemgetter("question") | retriever,
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
     )
+
     # Add memory wrapper
     chat_with_memory = RunnableWithMessageHistory(
         rag_chain,
