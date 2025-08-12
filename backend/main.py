@@ -15,6 +15,7 @@ from backend.chains.qa_lcel_chain import (
     get_lcel_qa_chain_with_sources
 )
 from backend.agents.ingest_documents import ingest_uploaded_documents
+from backend.agents.multi_tool_agent import get_multi_tool_agent
 
 app = FastAPI()
 templates = Jinja2Templates(directory="frontend/templates")
@@ -32,6 +33,7 @@ qa_chain = get_lcel_qa_chain()
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploaded_docs"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+agent = get_multi_tool_agent()
 
 class WebSocketCallbackHandler(AsyncCallbackHandler):
     def __init__(self, websocket: WebSocket):
@@ -67,7 +69,25 @@ def ask_question(request: Request, question: str = Form(...)):
             "sources": sources
         }
     )
+@app.post("/agent_ask", response_class=HTMLResponse)
+def agent_ask(request: Request, question: str = Form(...)):
+    result = agent.invoke({"input": question})
+    # result may be a dict if return_intermediate_steps=True
+    answer = result["output"] if isinstance(result, dict) else result
+    # backend/main.py (your /agent_ask handler)
+    result = agent.invoke({"input": question})
+    answer = result["output"] if isinstance(result, dict) else result
 
+    # If you want to debug which tools got used:
+    steps = result.get("intermediate_steps", []) if isinstance(result, dict) else []
+    for action, observation in steps:
+        print("TOOL CALLED:", action.tool, "ARGS:", action.tool_input)
+        print("OBSERVATION:", str(observation)[:200], "...\n")
+
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "answer": answer, "question": question}
+    )
 
 @app.websocket("/ws/ask")
 async def websocket_ask(websocket: WebSocket):
