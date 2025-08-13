@@ -1,23 +1,17 @@
 # backend/tools/rag_tool.py
-from pydantic import BaseModel, Field
-from langchain.tools import StructuredTool
+from langchain.tools import Tool
 from backend.chains.qa_lcel_chain import get_lcel_qa_chain_with_sources
 
-def _rag_answer(q: str) -> str:
+def rag_answer(question: str) -> str:
     retriever, chain = get_lcel_qa_chain_with_sources()
-    # pass as dict because your chain expects {"question": ...}
-    return chain.invoke({"question": q})
+    # your chain expects {"question": ...}
+    return chain.invoke({"question": question})
 
-class RAGInput(BaseModel):
-    q: str = Field(description="A natural language question about the uploaded Rundeck docs")
-
-RAG_TOOL = StructuredTool.from_function(
+RAG_TOOL = Tool.from_function(
     name="RAG_QA",
-    func=_rag_answer,
-    args_schema=RAGInput,
+    func=rag_answer,
     description=(
-        "Use ONLY for questions about Rundeck or anything in the uploaded documentation. "
-        "If the user asks about Rundeck setup, config, plugins, troubleshooting, or errors, "
-        "call this tool with the user's question in 'q'."
+        "Use for questions about Rundeck or anything in the uploaded documentation. "
+        "Input should be the user's natural-language question."
     ),
 )
