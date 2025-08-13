@@ -4,8 +4,10 @@ from backend.chains.qa_lcel_chain import get_lcel_qa_chain_with_sources
 
 def rag_answer(question: str) -> str:
     retriever, chain = get_lcel_qa_chain_with_sources()
-    # your chain expects {"question": ...}
-    return chain.invoke({"question": question})
+    return chain.invoke(
+        {"question": question},
+        config={"configurable": {"session_id": "agent-session"}}
+    )
 
 RAG_TOOL = Tool.from_function(
     name="RAG_QA",

@@ -4,10 +4,7 @@ from langchain_core.runnables import Runnable, RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.vectorstores import Chroma
-#from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.llms import Ollama
-from langchain_ollama import OllamaLLM, OllamaEmbeddings
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
 
 from backend.memory_store import get_chat_history
 
@@ -35,7 +32,7 @@ def get_lcel_qa_chain() -> Runnable:
     prompt = ChatPromptTemplate.from_template(template)
 
     # Chain Steps
-    llm = Ollama(model="llama2:7b")
+    llm = OllamaLLM(model="llama2:7b")
 
     rag_chain = (
             {"context": retriever, "question": lambda x: x}
