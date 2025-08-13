@@ -15,7 +15,7 @@ from backend.chains.qa_lcel_chain import (
     get_lcel_qa_chain_with_sources
 )
 from backend.agents.ingest_documents import ingest_uploaded_documents
-from backend.agents.multi_tool_agent_test import get_multi_tool_agent
+from backend.agents.multi_tool_agent import get_multi_tool_agent
 
 app = FastAPI()
 templates = Jinja2Templates(directory="frontend/templates")

@@ -13,7 +13,7 @@ SYSTEM_MSG = (
 )
 
 def get_multi_tool_agent():
-    llm = ChatOllama(model="gemma:2b")  # bump to llama3.1:8b-instruct if available
+    llm = ChatOllama(model="llama2:7b")  # bump to llama3.1:8b-instruct if available
     tools = [RAG_TOOL]  # add others later after confirming RAG works
     agent = initialize_agent(
         tools=tools,

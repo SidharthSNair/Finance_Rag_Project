@@ -35,7 +35,7 @@ def get_lcel_qa_chain() -> Runnable:
     prompt = ChatPromptTemplate.from_template(template)
 
     # Chain Steps
-    llm = Ollama(model="gemma:2b")
+    llm = Ollama(model="llama2:7b")
 
     rag_chain = (
             {"context": retriever, "question": lambda x: x}
@@ -67,7 +67,7 @@ def get_lcel_qa_chain_streaming(callbacks=None):
     prompt = ChatPromptTemplate.from_template(template)
 
     # Chain Steps
-    llm = OllamaLLM(model="gemma:2b", streaming=True, callbacks=callbacks)
+    llm = OllamaLLM(model="llama2:7b", streaming=True, callbacks=callbacks)
 
     rag_chain = (
             {"context": retriever, "question": lambda x: x}
@@ -108,7 +108,7 @@ def get_lcel_qa_chain_with_sources():
     ])
 
     # Chain Steps
-    llm = ChatOllama(model="gemma:2b", streaming=True)
+    llm = ChatOllama(model="llama2:7b", streaming=True)
 
     # rag_chain = (
     #         {"context": (lambda x: x["question"]) | retriever, "question": lambda x: x["question"]}
