@@ -1,33 +1,39 @@
 # backend/agents/multi_tool_agent.py
+from langchain_ollama import OllamaLLM
 from langchain.agents import initialize_agent, AgentType
-from langchain_core.tools import Tool
-from langchain_ollama import ChatOllama
-from backend.chains.qa_lcel_chain import get_lcel_qa_chain  # the simple RAG chain (no memory wrapper)
+from backend.tools.rag_tool import RAG_TOOL
 
-def _rag_answer(q: str) -> str:
-    """
-    Accepts a plain question string and returns an answer from the RAG chain.
-    IMPORTANT: pass a string to the chain that expects a string.
-    """
-    rag_chain = get_lcel_qa_chain()         # your non-memory LCEL chain
-    return rag_chain.invoke(q)              # chain is built to accept a bare string
+PROMPT_PREFIX = """You are an assistant that MUST use tools before answering.
 
-RAG_QA_TOOL = Tool(
-    name="RAG_QA",
-    func=_rag_answer,
-    description=(
-        "Use this to answer questions about the uploaded Rundeck docs. "
-        "Input must be a single plain string question, e.g. 'How do I configure node executors?'."
-    ),
-)
+You have ONE tool:
+- RAG_QA: input is a SINGLE plain string (the user's question). Do NOT send JSON. Do NOT add fields.
+
+CRITICAL RULES:
+- The only valid tool name is exactly: RAG_QA  (no parentheses, no argument types)
+- Follow this format exactly (no extra text):
+
+Thought: <your brief reasoning>
+Action: RAG_QA
+Action Input: <the user's question as a plain string>
+Observation: <tool result>
+Thought: <do you now have enough to answer?>
+Final Answer: <your final answer>
+
+Never answer without calling RAG_QA at least once.
+"""
 
 def get_multi_tool_agent():
-    llm = ChatOllama(model="gemma:2b")
+    llm = OllamaLLM(model="llama2:7b", temperature=0)  # keep it deterministic
+    tools = [RAG_TOOL]
     agent = initialize_agent(
-        tools=[RAG_QA_TOOL],                     # keep ONLY this tool until it works
+        tools=tools,
         llm=llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         handle_parsing_errors=True,
+        agent_kwargs={"prefix": PROMPT_PREFIX},
+        max_iterations=2,  # <-- cap retries
+        early_stopping_method="force",
+        return_intermediate_steps=True,
     )
     return agent
