@@ -1,39 +1,53 @@
 # backend/agents/multi_tool_agent.py
 from langchain_ollama import OllamaLLM
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.prompts import PromptTemplate
+
 from backend.tools.rag_tool import RAG_TOOL
+from backend.tools.sql_db_tool import DB_TOOL
 
-PROMPT_PREFIX = """You are an assistant that MUST use tools before answering.
+# Single, strict format. No signatures, no JSON for tool names.
+REACT_PROMPT = PromptTemplate.from_template("""
+You are a careful assistant that MUST use tools before answering.
 
-You have ONE tool:
-- RAG_QA: input is a SINGLE plain string (the user's question). Do NOT send JSON. Do NOT add fields.
+TOOLS:
+- RAG_QA: use for questions answered by the uploaded docs (e.g., "What is Rundeck?")
+- DB_QA: use for questions about the local SQLite DB (companies, tickers, prices). Input is the user's question as a single plain string.
 
-CRITICAL RULES:
-- The only valid tool name is exactly: RAG_QA  (no parentheses, no argument types)
-- Follow this format exactly (no extra text):
+RULES:
+- The only valid tool names are exactly: RAG_QA or DB_QA (no parentheses, no types).
+- Always pick ONE tool first.
+- Follow this format EXACTLY:
 
-Thought: <your brief reasoning>
-Action: RAG_QA
+Thought: <brief reasoning>
+Action: <RAG_QA or DB_QA>
 Action Input: <the user's question as a plain string>
 Observation: <tool result>
 Thought: <do you now have enough to answer?>
 Final Answer: <your final answer>
 
-Never answer without calling RAG_QA at least once.
-"""
+If the user asks about tickers, symbols, rows, SQL, companies, or prices -> use DB_QA.
+If the user asks conceptual questions from docs -> use RAG_QA.
+
+User question: {input}
+""")
 
 def get_multi_tool_agent():
-    llm = OllamaLLM(model="llama2:7b", temperature=0)  # keep it deterministic
-    tools = [RAG_TOOL]
-    agent = initialize_agent(
+    llm = OllamaLLM(model="llama2:7b", temperature=0)
+
+    tools = [RAG_TOOL, DB_QA := DB_TOOL]  # both tools
+
+    # Build a ReAct agent with OUR prompt (prevents signature hallucinations)
+    agent = create_react_agent(llm=llm, tools=tools, prompt=REACT_PROMPT)
+
+    # Wrap in an executor; cap iterations to avoid loops
+    executor = AgentExecutor(
+        agent=agent,
         tools=tools,
-        llm=llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
-        handle_parsing_errors=True,
-        agent_kwargs={"prefix": PROMPT_PREFIX},
-        max_iterations=2,  # <-- cap retries
-        early_stopping_method="force",
         return_intermediate_steps=True,
+        handle_parsing_errors=True,
+        max_iterations=3,                # avoid infinite loops
+        early_stopping_method="force",   # force stop if still confused
     )
-    return agent
+    return executor
