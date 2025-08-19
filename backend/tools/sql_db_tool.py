@@ -12,6 +12,7 @@ DB_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "data", "finance.db")
 )
 
+
 def db_answer(q: str) -> str:
     """Answer DB questions. Input must be a plain English question."""
     try:
@@ -30,12 +31,14 @@ def db_answer(q: str) -> str:
 
         # Guardrail: only allow SELECT
         if not sql.lower().lstrip().startswith("select"):
-            return dedent(f"""\
+            return dedent(
+                f"""\
                 SQL (blocked):
                 {sql}
 
                 Only read-only SELECT queries are allowed from this tool.
-            """)
+            """
+            )
 
         # Execute and trim long outputs
         raw = db.run(sql)  # returns a stringified result set
@@ -48,13 +51,15 @@ def db_answer(q: str) -> str:
         # Never crash the agent; return the error text as the tool response
         return f"[DB TOOL ERROR] {type(e).__name__}: {e}"
 
+
 DB_TOOL = Tool.from_function(
     name="DB_QA",
     func=db_answer,
     description=(
         "Ask questions about companies/prices stored in the local SQLite DB. "
+        "Answer questions using the local SQLite finance DB."
         "Input is a SINGLE plain string (e.g., 'What is the ticker for Apple Inc.?')."
     ),
-    infer_schema=False,   # keep it a single string input (no JSON signatures)
+    infer_schema=False,  # keep it a single string input (no JSON signatures)
     return_direct=False,
 )
