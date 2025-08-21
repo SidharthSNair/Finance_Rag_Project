@@ -5,6 +5,7 @@ __pycache__/
 .idea/
 unclean_data/
 data/
+backend/db/finance.db
 !data/.gitkeep
 vectorstore/*
 !vectorstore/.gitkeep
