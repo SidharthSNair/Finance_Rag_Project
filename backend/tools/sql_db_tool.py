@@ -9,7 +9,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain.chains import create_sql_query_chain
 
 DB_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "data", "finance.db")
+    os.path.join(os.path.dirname(__file__), "..", "data", "finance.db")
 )
 
 _SELECT_RE = re.compile(r"(?is)\bselect\b.*?;", re.DOTALL)
@@ -77,5 +77,5 @@ DB_TOOL = Tool.from_function(
         "Input is a SINGLE plain string."
     ),
     infer_schema=False,
-    return_direct=False,
+    return_direct=True,
 )
